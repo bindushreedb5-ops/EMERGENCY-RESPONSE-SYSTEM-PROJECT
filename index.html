@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description"
+        content="RescueAI - Next-Generation AI Emergency Response & Mission Control Command Center with real-time computer vision, voice SOS, tactical GPS mapping, CPR metronome, and ICE dispatch.">
+    <meta name="theme-color" content="#080c14">
+
+    <title>🚨 RescueAI - Next-Gen Emergency Response Command Center</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Outfit:wght@300;400;500;600;700;800;900&display=swap"
+        rel="stylesheet">
+
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <!-- Leaflet CSS for Tactical Map -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+
+    <!-- Core Stylesheet -->
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body class="theme-dark">
+
+    <!-- Fullscreen Emergency Strobe & Audio Alert Overlay -->
+    <div id="emergencyStrobeOverlay" class="emergency-overlay hidden">
+        <div class="strobe-content">
+            <div class="strobe-badge">
+                <i class="fa-solid fa-triangle-exclamation fa-beat-fade"></i> EMERGENCY BROADCAST ACTIVE
+            </div>
+            <h1 id="overlayAlertTitle">CRITICAL ALERT DISPATCHED</h1>
+            <p id="overlayAlertSubtitle">Emergency Beacon Transmitting Live Telemetry & GPS Coordinates...</p>
+            <div class="overlay-actions">
+                <button id="overlayStopBtn" class="btn-kill-switch">
+                    <i class="fa-solid fa-hand"></i> Stand Down / Silence Alarm
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Top Command Center Navigation Bar -->
+    <header class="command-header">
+        <div class="header-branding">
+            <div class="brand-logo">
+                <span class="logo-pulse"></span>
+                <i class="fa-solid fa-shield-halved"></i>
+            </div>
+            <div class="brand-titles">
+                <div class="brand-name">RESCUE<span class="brand-ai">AI</span> <span class="tag-version">PRO v3.0</span>
+                </div>
+                <div class="brand-subtitle">Autonomous Emergency Response & Tactical Command</div>
+            </div>
+        </div>
+
+        <!-- Telemetry & Status Bar -->
+        <div class="telemetry-bar">
+            <div class="telemetry-item" title="Current Local Time">
+                <i class="fa-regular fa-clock"></i>
+                <span id="telemetryClock">--:--:--</span>
+            </div>
+            <div class="telemetry-item" title="GPS Satellite Fix">
+                <i class="fa-solid fa-satellite-dish" id="gpsIcon"></i>
+                <span id="gpsStatusBadge">GPS: Seeking...</span>
+            </div>
+            <div class="telemetry-item" title="AI Neural Engine Status">
+                <i class="fa-solid fa-brain" id="aiIcon"></i>
+                <span id="aiStatusBadge">AI: Standby</span>
+            </div>
+            <div class="telemetry-item system-indicator">
+                <span class="status-dot green" id="systemStatusDot"></span>
+                <strong id="systemStatusText">SYSTEM ARMED</strong>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Command Dashboard Grid -->
+    <main class="dashboard-container">
+
+        <!-- Quick Action / SOS Primary Hero Banner -->
+        <section class="sos-hero-panel">
+            <div class="sos-trigger-container">
+                <div class="sos-glow-rings">
+                    <div class="ring ring-1"></div>
+                    <div class="ring ring-2"></div>
+                </div>
+                <button id="masterEmergencyBtn" class="btn-master-sos" aria-label="Trigger Master Emergency SOS">
+                    <div class="sos-inner">
+                        <i class="fa-solid fa-triangle-exclamation"></i>
+                        <span class="sos-text">SOS</span>
+                        <span class="sos-sub">TAP TO BROADCAST</span>
+                    </div>
+                </button>
+            </div>
+
+            <div class="sos-details-card">
+                <div class="sos-header-row">
+                    <h3><i class="fa-solid fa-tower-broadcast"></i> Instant Rapid Dispatch</h3>
+                    <span class="badge-alert-level" id="threatLevelBadge">THREAT LEVEL: READY</span>
+                </div>
+                <p class="sos-desc">
+                    Instantly triggers multi-tone sirens, flashes visual strobe alarms, records camera telemetry, and
+                    broadcasts pre-formatted emergency dispatch messages with live GPS coordinates to emergency services
+                    and ICE contacts.
+                </p>
+
+                <!-- Quick Category Buttons -->
+                <div class="quick-category-grid">
+                    <button class="btn-quick-cat" data-type="medical">
+                        <i class="fa-solid fa-heart-pulse"></i>
+                        <span>Medical</span>
+                    </button>
+                    <button class="btn-quick-cat" data-type="fire">
+                        <i class="fa-solid fa-fire-flame-curved"></i>
+                        <span>Fire / Hazmat</span>
+                    </button>
+                    <button class="btn-quick-cat" data-type="police">
+                        <i class="fa-solid fa-shield-cat"></i>
+                        <span>Police / Threat</span>
+                    </button>
+                    <button class="btn-quick-cat" data-type="accident">
+                        <i class="fa-solid fa-car-burst"></i>
+                        <span>Accident / Crash</span>
+                    </button>
+                </div>
+
+                <!-- Voice SOS Control Bar -->
+                <div class="voice-sos-control">
+                    <div class="voice-toggle-group">
+                        <button id="voiceToggleBtn" class="btn-voice">
+                            <i class="fa-solid fa-microphone-lines"></i>
+                            <span id="voiceStatusText">Voice Trigger: OFF</span>
+                        </button>
+                        <span class="voice-hint">Say <em>"HELP"</em>, <em>"EMERGENCY"</em>, <em>"FIRE"</em>, or
+                            <em>"AMBULANCE"</em></span>
+                    </div>
+
+                    <div class="siren-select-group">
+                        <label for="sirenTypeSelect"><i class="fa-solid fa-volume-high"></i> Siren:</label>
+                        <select id="sirenTypeSelect" class="form-select">
+                            <option value="ambulance">Ambulance Hi-Lo</option>
+                            <option value="police">Police Wail</option>
+                            <option value="fire">Fire Evacuation</option>
+                            <option value="morse">Morse SOS (... --- ...)</option>
+                        </select>
+                        <button id="soundTestBtn" class="btn-icon-action" title="Preview Siren Tone">
+                            <i class="fa-solid fa-play"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Main Panel Workspace Grid -->
+        <div class="dashboard-grid">
+
+            <!-- ============================================ -->
+            <!-- PANEL 1: AI COMPUTER VISION & HUD OVERLAY   -->
+            <!-- ============================================ -->
+            <section class="panel-card vision-panel">
+                <div class="panel-header">
+                    <div class="panel-title">
+                        <i class="fa-solid fa-video"></i>
+                        <h2>AI Vision & Tactical HUD</h2>
+                    </div>
+                    <div class="panel-actions">
+                        <span class="fps-badge" id="fpsDisplay">0 FPS</span>
+                        <button id="nightVisionBtn" class="btn-panel-action"
+                            title="Toggle Night Vision Contrast Filter">
+                            <i class="fa-solid fa-moon"></i>
+                        </button>
+                        <button id="cameraFlipBtn" class="btn-panel-action" title="Switch Front / Rear Camera">
+                            <i class="fa-solid fa-camera-rotate"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="panel-body">
+                    <!-- Video HUD Viewport -->
+                    <div class="viewport-wrapper">
+                        <video id="cameraVideo" autoplay playsinline muted></video>
+                        <canvas id="visionCanvas"></canvas>
+
+                        <!-- HUD Overlays -->
+                        <div class="hud-overlay" id="hudOverlay">
+                            <div class="hud-corner top-left"></div>
+                            <div class="hud-corner top-right"></div>
+                            <div class="hud-corner bottom-left"></div>
+                            <div class="hud-corner bottom-right"></div>
+
+                            <div class="hud-target-reticle" id="hudReticle">
+                                <div class="reticle-circle"></div>
+                                <div class="reticle-line h"></div>
+                                <div class="reticle-line v"></div>
+                            </div>
+
+                            <div class="hud-scanner-bar"></div>
+                            <div class="hud-telemetry-tag" id="hudTelemetryTag">SYS IDLE</div>
+                        </div>
+
+                        <!-- Camera Standby Placeholder -->
+                        <div class="camera-standby-placeholder" id="cameraPlaceholder">
+                            <i class="fa-solid fa-eye-slash"></i>
+                            <h3>Camera Feed Inactive</h3>
+                            <p>Initialize optical sensor to start neural network hazard & person tracking.</p>
+                            <button id="startCameraPrimaryBtn" class="btn-primary">
+                                <i class="fa-solid fa-power-off"></i> Initialize Optical Feed
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Vision Control Bar -->
+                    <div class="vision-controls">
+                        <div class="btn-group">
+                            <button id="toggleCameraBtn" class="btn-control">
+                                <i class="fa-solid fa-video"></i> <span id="cameraBtnLabel">Start Camera</span>
+                            </button>
+                            <button id="captureSnapshotBtn" class="btn-control secondary" disabled>
+                                <i class="fa-solid fa-camera"></i> Capture Evidence
+                            </button>
+                            <button id="tripwireToggleBtn" class="btn-control secondary"
+                                title="Enable virtual intrusion / fall boundary alert">
+                                <i class="fa-solid fa-bullseye"></i> Zone Guard: <span id="zoneGuardText">OFF</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Live Detection Telemetry Cards -->
+                    <div class="telemetry-stats-row">
+                        <div class="stat-card">
+                            <span class="stat-label">Humans Detected</span>
+                            <span class="stat-value" id="personCountVal">0</span>
+                            <span class="stat-meta" id="crowdDensityBadge">Density: Clear</span>
+                        </div>
+                        <div class="stat-card">
+                            <span class="stat-label">Posture / Fall Hazard</span>
+                            <span class="stat-value" id="fallStatusVal">Normal</span>
+                            <span class="stat-meta" id="fallConfidenceVal">Confidence: --%</span>
+                        </div>
+                        <div class="stat-card">
+                            <span class="stat-label">Objects Identified</span>
+                            <span class="stat-value" id="objectsCountVal">0</span>
+                            <span class="stat-meta" id="objectsSummaryVal">No hazards</span>
+                        </div>
+                    </div>
+
+                    <!-- Detection Class Pill Feed -->
+                    <div class="detected-tags-container" id="detectedTagsContainer">
+                        <span class="tag-placeholder">Live object classification tags will appear here</span>
+                    </div>
+                </div>
+            </section>
+
+
+            <!-- ============================================ -->
+            <!-- PANEL 2: TACTICAL GPS & MAP COMMAND         -->
+            <!-- ============================================ -->
+            <section class="panel-card map-panel">
+                <div class="panel-header">
+                    <div class="panel-title">
+                        <i class="fa-solid fa-map-location-dot"></i>
+                        <h2>Tactical Geolocation & Responders</h2>
+                    </div>
+                    <div class="panel-actions">
+                        <button id="refreshGpsBtn" class="btn-panel-action" title="Re-sync High Accuracy GPS">
+                            <i class="fa-solid fa-location-crosshairs"></i>
+                        </button>
+                        <button id="shareLocationBtn" class="btn-panel-action"
+                            title="Share Coordinates via WhatsApp / SMS">
+                            <i class="fa-solid fa-share-nodes"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="panel-body">
+                    <!-- Address & Coordinates Banner -->
+                    <div class="location-banner">
+                        <div class="loc-icon-col">
+                            <i class="fa-solid fa-location-dot fa-bounce"></i>
+                        </div>
+                        <div class="loc-details-col">
+                            <div class="loc-address" id="readableAddress">Resolving geographical street address...</div>
+                            <div class="loc-coords">
+                                <span id="latLonDisplay">LAT: --.----- | LON: --.-----</span>
+                                <span class="badge-accuracy" id="gpsAccuracyBadge">Accuracy: ±--m</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Interactive Leaflet Map Container -->
+                    <div id="tacticalMap" class="map-viewport"></div>
+
+                    <!-- Nearest Emergency Services List -->
+                    <div class="responders-list">
+                        <div class="responders-header">
+                            <h4><i class="fa-solid fa-hospital"></i> Nearest Emergency Responders (Calculated)</h4>
+                            <span class="route-note">Instant Distance & ETA Matrix</span>
+                        </div>
+                        <div class="responders-grid" id="respondersGrid">
+                            <!-- Populated dynamically via script.js -->
+                            <div class="responder-card hospital">
+                                <div class="resp-icon"><i class="fa-solid fa-hospital-user"></i></div>
+                                <div class="resp-info">
+                                    <strong id="respHospName">Apex Emergency & Trauma Care</strong>
+                                    <p id="respHospDist"><i class="fa-solid fa-route"></i> 1.2 km | ETA: ~4 mins</p>
+                                </div>
+                                <a href="tel:108" class="btn-resp-call" title="Emergency Call"><i
+                                        class="fa-solid fa-phone"></i> Call 108</a>
+                            </div>
+
+                            <div class="responder-card police">
+                                <div class="resp-icon"><i class="fa-solid fa-building-shield"></i></div>
+                                <div class="resp-info">
+                                    <strong id="respPolName">District Police Station & PCR</strong>
+                                    <p id="respPolDist"><i class="fa-solid fa-route"></i> 1.8 km | ETA: ~6 mins</p>
+                                </div>
+                                <a href="tel:100" class="btn-resp-call" title="Emergency Call"><i
+                                        class="fa-solid fa-phone"></i> Call 100</a>
+                            </div>
+
+                            <div class="responder-card fire">
+                                <div class="resp-icon"><i class="fa-solid fa-fire-extinguisher"></i></div>
+                                <div class="resp-info">
+                                    <strong id="respFireName">Central Fire & Rescue Unit</strong>
+                                    <p id="respFireDist"><i class="fa-solid fa-route"></i> 2.4 km | ETA: ~8 mins</p>
+                                </div>
+                                <a href="tel:101" class="btn-resp-call" title="Emergency Call"><i
+                                        class="fa-solid fa-phone"></i> Call 101</a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Emergency Direct-Dial Bar -->
+                    <div class="speed-dial-bar">
+                        <a href="tel:112" class="btn-speed-dial all"><i class="fa-solid fa-phone-volume"></i> 112
+                            Universal SOS</a>
+                        <a href="tel:108" class="btn-speed-dial ambulance"><i class="fa-solid fa-truck-medical"></i> 108
+                            Ambulance</a>
+                        <a href="tel:100" class="btn-speed-dial police"><i class="fa-solid fa-shield"></i> 100
+                            Police</a>
+                        <a href="tel:101" class="btn-speed-dial fire"><i class="fa-solid fa-fire"></i> 101 Fire</a>
+                    </div>
+                </div>
+            </section>
+
+
+            <!-- ============================================ -->
+            <!-- PANEL 3: CPR & FIRST AID CRISIS CENTER      -->
+            <!-- ============================================ -->
+            <section class="panel-card firstaid-panel">
+                <div class="panel-header">
+                    <div class="panel-title">
+                        <i class="fa-solid fa-kit-medical"></i>
+                        <h2>First Aid Crisis Playbooks & CPR Metronome</h2>
+                    </div>
+                    <div class="panel-actions">
+                        <button id="toggleCprModalBtn" class="btn-badge-action pulse-highlight">
+                            <i class="fa-solid fa-heart-pulse"></i> Quick CPR
+                        </button>
+                    </div>
+                </div>
+
+                <div class="panel-body">
+                    <!-- Interactive CPR Metronome Widget -->
+                    <div class="cpr-widget">
+                        <div class="cpr-info">
+                            <h4><i class="fa-solid fa-stopwatch-20"></i> Interactive CPR Compression Metronome</h4>
+                            <p>Recommended standard: <strong>100 - 120 compressions/min</strong> (Push hard and fast in
+                                the center of the chest).</p>
+                        </div>
+                        <div class="cpr-controls">
+                            <div class="metronome-visual" id="cprVisualPulse">
+                                <i class="fa-solid fa-heart" id="cprHeartIcon"></i>
+                                <span class="cpr-bpm" id="cprBpmVal">110 BPM</span>
+                            </div>
+                            <div class="metronome-buttons">
+                                <button id="cprStartBtn" class="btn-cpr-toggle">
+                                    <i class="fa-solid fa-play"></i> Start Rhythm
+                                </button>
+                                <span class="cpr-counter-tag">Cycles: <strong id="cprCycleCount">0</strong> (30:2
+                                    Breaths)</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Searchable First Aid Accordion -->
+                    <div class="playbooks-section">
+                        <div class="playbook-search">
+                            <i class="fa-solid fa-magnifying-glass"></i>
+                            <input type="text" id="playbookSearchInput"
+                                placeholder="Search emergency protocol (e.g. bleeding, choking, burns, stroke)..."
+                                autocomplete="off">
+                        </div>
+
+                        <div class="playbook-cards" id="playbookContainer">
+                            <!-- Choking -->
+                            <details class="playbook-item" open>
+                                <summary>
+                                    <span class="item-title"><i class="fa-solid fa-lungs"></i> Severe Choking (Heimlich
+                                        Maneuver)</span>
+                                    <span class="badge-priority high">High Priority</span>
+                                </summary>
+                                <div class="playbook-content">
+                                    <ol>
+                                        <li><strong>Verify:</strong> Ask "Are you choking?" If unable to speak or cough,
+                                            act immediately.</li>
+                                        <li><strong>Position:</strong> Stand behind the person, wrap arms around waist,
+                                            lean them slightly forward.</li>
+                                        <li><strong>Thrusts:</strong> Place fist thumb-side in above navel; grasp with
+                                            other hand and give quick, inward-upward abdominal thrusts.</li>
+                                        <li><strong>Unresponsive:</strong> If victim loses consciousness, lower gently
+                                            to floor and begin CPR immediately.</li>
+                                    </ol>
+                                </div>
+                            </details>
+
+                            <!-- Bleeding -->
+                            <details class="playbook-item">
+                                <summary>
+                                    <span class="item-title"><i class="fa-solid fa-droplet"></i> Severe Bleeding &
+                                        Hemorrhage</span>
+                                    <span class="badge-priority critical">Critical</span>
+                                </summary>
+                                <div class="playbook-content">
+                                    <ol>
+                                        <li><strong>Direct Pressure:</strong> Apply firm, steady pressure directly over
+                                            the wound with sterile gauze or clean cloth.</li>
+                                        <li><strong>Maintain:</strong> Do not remove soaked gauze; add more layers on
+                                            top and secure tightly.</li>
+                                        <li><strong>Tourniquet:</strong> For catastrophic limb bleeding that won't stop,
+                                            apply a commercial tourniquet 2-3 inches above wound (never over a joint).
+                                        </li>
+                                        <li><strong>Keep Warm:</strong> Treat for shock by laying victim down, elevating
+                                            legs, and keeping warm with a blanket.</li>
+                                    </ol>
+                                </div>
+                            </details>
+
+                            <!-- Stroke -->
+                            <details class="playbook-item">
+                                <summary>
+                                    <span class="item-title"><i class="fa-solid fa-brain"></i> Stroke Detection
+                                        (F.A.S.T. Protocol)</span>
+                                    <span class="badge-priority critical">Critical</span>
+                                </summary>
+                                <div class="playbook-content">
+                                    <ul>
+                                        <li><strong>F - Face Drooping:</strong> Ask person to smile. Does one side of
+                                            the face droop or feel numb?</li>
+                                        <li><strong>A - Arm Weakness:</strong> Ask person to raise both arms. Does one
+                                            arm drift downward?</li>
+                                        <li><strong>S - Speech Difficulty:</strong> Ask person to repeat a simple
+                                            sentence. Is speech slurred or strange?</li>
+                                        <li><strong>T - Time to Call 112/108:</strong> If any signs are positive, call
+                                            emergency services immediately and note the exact time symptoms started.
+                                        </li>
+                                    </ul>
+                                </div>
+                            </details>
+
+                            <!-- Burns -->
+                            <details class="playbook-item">
+                                <summary>
+                                    <span class="item-title"><i class="fa-solid fa-fire"></i> Burns & Scalds
+                                        Treatment</span>
+                                    <span class="badge-priority medium">Medium Priority</span>
+                                </summary>
+                                <div class="playbook-content">
+                                    <ol>
+                                        <li><strong>Cool Water:</strong> Immediately cool burn under cool running tap
+                                            water for at least 10–20 minutes. Do NOT use ice.</li>
+                                        <li><strong>Protect:</strong> Cover burn loosely with sterile non-stick bandage
+                                            or clean plastic wrap.</li>
+                                        <li><strong>Do NOT:</strong> Never burst blisters, peel away adhered clothing,
+                                            or apply toothpaste, butter, or oil.</li>
+                                        <li><strong>Seek Care:</strong> Seek immediate medical attention if burn is
+                                            large, on face/hands, or caused by chemical/electrical source.</li>
+                                    </ol>
+                                </div>
+                            </details>
+
+                            <!-- Fire Evacuation -->
+                            <details class="playbook-item">
+                                <summary>
+                                    <span class="item-title"><i class="fa-solid fa-person-running"></i> Fire & Smoke
+                                        Evacuation</span>
+                                    <span class="badge-priority high">High Priority</span>
+                                </summary>
+                                <div class="playbook-content">
+                                    <ol>
+                                        <li><strong>Stay Low:</strong> Crawl low under smoke where air is cleaner and
+                                            cooler.</li>
+                                        <li><strong>Check Doors:</strong> Feel door handles with the back of hand before
+                                            opening; if hot, do not open.</li>
+                                        <li><strong>Escape:</strong> Use nearest fire stairwell. NEVER use elevators
+                                            during a fire.</li>
+                                        <li><strong>Assemble:</strong> Reach designated evacuation assembly point
+                                            outside and do not re-enter.</li>
+                                    </ol>
+                                </div>
+                            </details>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+
+            <!-- ============================================ -->
+            <!-- PANEL 4: ICE CONTACTS & MEDICAL PROFILE     -->
+            <!-- ============================================ -->
+            <section class="panel-card ice-panel">
+                <div class="panel-header">
+                    <div class="panel-title">
+                        <i class="fa-solid fa-address-book"></i>
+                        <h2>In Case of Emergency (ICE) & Medical ID</h2>
+                    </div>
+                    <div class="panel-actions">
+                        <button id="addContactBtn" class="btn-panel-action" title="Add New ICE Contact">
+                            <i class="fa-solid fa-user-plus"></i> Add
+                        </button>
+                        <button id="broadcastIceBtn" class="btn-panel-action highlight"
+                            title="Send Instant SOS WhatsApp/SMS to All ICE Contacts">
+                            <i class="fa-solid fa-paper-plane"></i> Broadcast All
+                        </button>
+                    </div>
+                </div>
+
+                <div class="panel-body">
+                    <!-- Medical Profile Card -->
+                    <div class="medical-profile-card">
+                        <div class="med-header">
+                            <div class="med-avatar"><i class="fa-solid fa-id-card-clip"></i></div>
+                            <div class="med-user-info">
+                                <strong id="medProfileName">John Doe (Primary User)</strong>
+                                <span>Emergency Medical ID</span>
+                            </div>
+                            <button id="editMedicalBtn" class="btn-mini-edit" title="Edit Medical Info"><i
+                                    class="fa-solid fa-pen"></i></button>
+                        </div>
+                        <div class="med-grid">
+                            <div class="med-item"><span class="label">Blood Group:</span> <strong
+                                    id="medBlood">O+</strong></div>
+                            <div class="med-item"><span class="label">Allergies:</span> <strong
+                                    id="medAllergies">Penicillin, Peanuts</strong></div>
+                            <div class="med-item"><span class="label">Conditions:</span> <strong
+                                    id="medConditions">Asthma</strong></div>
+                            <div class="med-item"><span class="label">Emergency Meds:</span> <strong
+                                    id="medMeds">Inhaler in pocket</strong></div>
+                        </div>
+                    </div>
+
+                    <!-- ICE Contacts List -->
+                    <div class="ice-contacts-container">
+                        <div class="ice-list-header">
+                            <h4>Saved Emergency Contacts (<span id="iceCountBadge">0</span>)</h4>
+                            <span class="subtext">Direct 1-Click WhatsApp / SMS SOS</span>
+                        </div>
+                        <div class="ice-list" id="iceContactsList">
+                            <!-- Populated dynamically from localStorage -->
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+
+            <!-- ============================================ -->
+            <!-- PANEL 5: LIVE INCIDENT LOG & EVIDENCE FEED  -->
+            <!-- ============================================ -->
+            <section class="panel-card log-panel full-width">
+                <div class="panel-header">
+                    <div class="panel-title">
+                        <i class="fa-solid fa-clock-rotate-left"></i>
+                        <h2>Incident Event Timeline & Evidence Audit</h2>
+                    </div>
+                    <div class="panel-actions">
+                        <button id="exportLogBtn" class="btn-panel-action" title="Download Official Incident Report">
+                            <i class="fa-solid fa-file-arrow-down"></i> Export Report
+                        </button>
+                        <button id="clearLogBtn" class="btn-panel-action" title="Clear Event Log">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="panel-body">
+                    <div class="log-split-view">
+                        <!-- Event Timeline List -->
+                        <div class="timeline-container">
+                            <div class="timeline-list" id="incidentTimeline">
+                                <!-- Log Items added dynamically -->
+                            </div>
+                        </div>
+
+                        <!-- Captured Evidence Gallery -->
+                        <div class="evidence-gallery-container">
+                            <h4><i class="fa-solid fa-images"></i> Optical Evidence Snapshots (<span
+                                    id="evidenceCountBadge">0</span>)</h4>
+                            <div class="evidence-grid" id="evidenceGrid">
+                                <div class="no-evidence-hint">No incident snapshots captured yet. Use "Capture Evidence"
+                                    or trigger SOS.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+        </div>
+    </main>
+
+    <!-- Modal for Adding / Editing ICE Contact -->
+    <div id="contactModal" class="modal-overlay hidden">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-user-shield"></i> <span id="modalTitle">Add Emergency Contact</span></h3>
+                <button id="closeModalBtn" class="btn-close">&times;</button>
+            </div>
+            <form id="contactForm" class="modal-form">
+                <div class="form-group">
+                    <label for="contactName">Full Name</label>
+                    <input type="text" id="contactName" required placeholder="e.g. Dr. Sarah Connor">
+                </div>
+                <div class="form-group">
+                    <label for="contactRelation">Relationship</label>
+                    <input type="text" id="contactRelation" required placeholder="e.g. Spouse / Parent / Physician">
+                </div>
+                <div class="form-group">
+                    <label for="contactPhone">Phone Number (with Country Code)</label>
+                    <input type="tel" id="contactPhone" required placeholder="e.g. +91 9876543210">
+                </div>
+                <div class="form-actions">
+                    <button type="button" id="cancelModalBtn" class="btn-secondary">Cancel</button>
+                    <button type="submit" class="btn-primary">Save Contact</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal for Editing Medical Profile -->
+    <div id="medicalModal" class="modal-overlay hidden">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-notes-medical"></i> Edit Medical ID Profile</h3>
+                <button id="closeMedModalBtn" class="btn-close">&times;</button>
+            </div>
+            <form id="medicalForm" class="modal-form">
+                <div class="form-group">
+                    <label for="medInputName">Full Name</label>
+                    <input type="text" id="medInputName" required>
+                </div>
+                <div class="form-group">
+                    <label for="medInputBlood">Blood Group</label>
+                    <select id="medInputBlood" class="form-select">
+                        <option value="O+">O+</option>
+                        <option value="O-">O-</option>
+                        <option value="A+">A+</option>
+                        <option value="A-">A-</option>
+                        <option value="B+">B+</option>
+                        <option value="B-">B-</option>
+                        <option value="AB+">AB+</option>
+                        <option value="AB-">AB-</option>
+                        <option value="Unknown">Unknown</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="medInputAllergies">Allergies</label>
+                    <input type="text" id="medInputAllergies" placeholder="e.g. Penicillin, Peanuts, Latex">
+                </div>
+                <div class="form-group">
+                    <label for="medInputConditions">Chronic Medical Conditions</label>
+                    <input type="text" id="medInputConditions" placeholder="e.g. Asthma, Diabetes, Hypertension">
+                </div>
+                <div class="form-group">
+                    <label for="medInputMeds">Emergency Medications / Notes</label>
+                    <input type="text" id="medInputMeds" placeholder="e.g. Epipen in backpack, Inhaler">
+                </div>
+                <div class="form-actions">
+                    <button type="button" id="cancelMedModalBtn" class="btn-secondary">Cancel</button>
+                    <button type="submit" class="btn-primary">Update Profile</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="command-footer">
+        <div class="footer-content">
+            <div class="footer-left">
+                <p><strong>RescueAI</strong> Emergency Command Center &copy; 2026 | Built for High-Stakes Crisis
+                    Response</p>
+                <span class="footer-sub">All AI vision, audio synthesis, and geolocation features execute securely
+                    client-side.</span>
+            </div>
+            <div class="footer-right">
+                <span class="system-healthy"><i class="fa-solid fa-circle-check"></i> Subsystems Nominal</span>
+            </div>
+        </div>
+    </footer>
+
+    <!-- EXTERNAL LIBRARIES -->
+    <!-- Leaflet JS for Tactical Map -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+    <!-- TensorFlow.js and COCO-SSD for AI Computer Vision -->
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.17.0/dist/tf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd@2.2.3/dist/coco-ssd.min.js"></script>
+
+    <!-- Main Logic Script -->
+    <script src="script.js"></script>
+</body>
+
+</html>
